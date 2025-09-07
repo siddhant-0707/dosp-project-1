@@ -3,5 +3,5 @@
 
 *.beam
 *.ez
-lukas/build
+squares/build
 erl_crash.dump

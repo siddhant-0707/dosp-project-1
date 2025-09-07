@@ -26,12 +26,13 @@ pub fn main() -> Nil {
 }
 
 fn usage() -> Nil {
-  io.println("Usage: lukas N k")
+  io.println("Usage: squares N k")
 }
 
 fn run(n: Int, k: Int) -> Nil {
   let assert Ok(actor.Started(_, data: subject)) = boss.start()
-  let work_unit = pick_work_unit(k)
+  // let work_unit = pick_work_unit(k)
+  let work_unit = pick_work_unit(2000)
   let starts = boss.solve(subject, n, k, work_unit)
   print_starts(starts)
 }

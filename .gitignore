@@ -1,0 +1,7 @@
+# Created by https://gitignore.org
+# Gleam.gitignore
+
+*.beam
+*.ez
+lukas/build
+erl_crash.dump

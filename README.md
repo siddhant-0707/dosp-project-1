@@ -38,7 +38,7 @@ Benchmark Results for `squares <batch_size> 1000000 4`:
 
 ### 2. Performance Results for `squares 1000000 4`
 
-**Command:** `gleam run -m squares 32000 1000000 4`
+**Command:** `gleam run -m squares 1000000 4`
 
 ![Command Output](./squares/images/second-output.png)
 
@@ -52,7 +52,7 @@ CPU Utilization: 622%
 
 ### 3. Scalability Analysis - CPU to Real Time Ratios
 
-**For `squares 32000 10000000 24`:**
+**For `squares 10000000 24`:**
 ```
 Real Time: 0.420s
 CPU Time: 3.71s
@@ -62,7 +62,7 @@ System Utilization: 953%
 
 ![Command Output](./squares/images/10000000-24.png)
 
-**For `squares 32000 100000000 24` (additional test):**
+**For `squares 100000000 24` (additional test):**
 ```
 Real Time: 1.269s  
 CPU Time: 25.27s
@@ -78,7 +78,7 @@ System Utilization: 2018%
 
 ### 4. Largest Problem Solved
 
-**Command:** `squares 32000 1000000000 24`
+**Command:** `squares 1000000000 24`
 
 **Results:**
 ```
@@ -109,5 +109,5 @@ gleam build
 gleam run -m squares <batch_size> <upper_bound> <sequence_length>
 
 # Example: Find sequences of length 4 up to 1,000,000 with batch size 32,000
-gleam run -m squares 32000 1000000 4
+gleam run -m squares 1000000 4
 ```

@@ -33,10 +33,10 @@ pub fn main() {
     argv.load().arguments
     |> list.map(int.parse)
   {
-    [Ok(size), Ok(bound), Ok(length)] if length > 0 && bound > 0 -> {
+    [Ok(bound), Ok(length)] if length > 0 && bound > 0 -> {
       let res =
         cli_run(
-          Config(max_workers: schedulers_online(), batch_size: size),
+          Config(max_workers: schedulers_online(), batch_size: 32000),
           bound,
           length,
         )

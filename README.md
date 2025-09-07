@@ -13,7 +13,7 @@ The implementation uses a boss-worker actor pattern:
 
 ### 1. Optimal Work Unit Size
 
-**Best work unit size: 32,000**
+**Best work unit size: `32,000`**
 
 We determined this through systematic benchmarking using the `hyperfine` tool, testing batch sizes from 8,000 to 64,000. The work unit size refers to the number of sub-problems (consecutive starting points) that each worker processes in a single request from the boss.
 

@@ -205,8 +205,7 @@ fn start_distributed_computation_erlang(
       io.println("Spawned " <> int.to_string(list.length(work_chunks)) <> " distributed workers")
       
       // Wait for coordinator to collect all results  
-      actor.call(coordinator, 300_000, fn(_reply) { GetResults })
-      |> result.map_error(fn(_) { "Timeout waiting for results" })
+      Ok(actor.call(coordinator, 300_000, fn(reply) { GetResults(reply) }))
     }
     Error(err) -> Error("Failed to start coordinator: " <> err)
   }
@@ -315,7 +314,7 @@ fn send_to_pid(pid: process.Pid, message: term) -> term
 // Message receiving for distributed coordination  
 type CoordinatorMessage {
   WorkComplete(results: List(Result(Int, String)))
-  GetResults  // Simplified - no reply subject needed for actor.call
+  GetResults(reply: Subject(List(Result(Int, String))))
   WorkTimeout
 }
 
@@ -361,17 +360,13 @@ fn handle_coordinator_message(
       |> actor.continue
     }
     
-    GetResults -> {
-      // Return the collected results - actor.call will handle the response
+    GetResults(reply) -> {
+      // Return the collected results via reply subject
+      reply |> process.send(state.collected_results)
+      
       case state.completed_workers >= state.expected_workers {
-        True -> {
-          io.println("All workers completed, returning " <> int.to_string(list.length(state.collected_results)) <> " results")
-          actor.stop_and_reply(state.collected_results)
-        }
-        False -> {
-          io.println("Still waiting for workers, returning partial results")
-          actor.reply(state.collected_results, state)
-        }
+        True -> actor.stop()
+        False -> state |> actor.continue
       }
     }
     

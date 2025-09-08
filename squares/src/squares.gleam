@@ -312,7 +312,7 @@ pub fn spawn_link_remote(
 fn send_to_pid(pid: process.Pid, message: term) -> term
 
 // Message receiving for distributed coordination  
-type CoordinatorMessage {
+pub type CoordinatorMessage {
   WorkComplete(results: List(Result(Int, String)))
   GetResults(reply: Subject(List(Result(Int, String))))
   WorkTimeout
@@ -485,13 +485,12 @@ fn spawn_distributed_workers_with_actor(
       Ok(node_name) -> {
         let node_atom = atom.create(node_name)
         
-        // Spawn remote worker that will compute and send results back to coordinator
-        let worker_pid = spawn_distributed_worker_with_coordinator(
-          node_atom, 
-          chunk.0, 
-          chunk.1, 
-          length, 
-          coordinator
+        // Spawn remote worker on the node; it will log locally and send results back
+        let worker_pid = spawn_link_remote(
+          node_atom,
+          atom.create("squares"),
+          atom.create("distributed_worker_entry"),
+          [#(chunk.0, chunk.1, length, coordinator)]
         )
         
         io.println("Spawned worker on " <> node_name <> " for range " <> 
@@ -579,8 +578,33 @@ fn handle_compute_worker(
   
   case message {
     StartCompute -> {
+      let node_name = current_node() |> atom.to_string
+      io.println(
+        "node "
+        <> node_name
+        <> ": starting range "
+        <> int.to_string(from)
+        <> "-"
+        <> int.to_string(to)
+        <> " length "
+        <> int.to_string(length)
+      )
       // Perform the actual computation
       let results = accumulate_compute(from, to, length, [])
+      let ok_count =
+        results
+        |> list.filter(fn(r) { case r { Ok(_) -> True _ -> False } })
+        |> list.length
+      io.println(
+        "node "
+        <> node_name
+        <> ": completed range "
+        <> int.to_string(from)
+        <> "-"
+        <> int.to_string(to)
+        <> ", ok="
+        <> int.to_string(ok_count)
+      )
       
       // Send results to coordinator
       coordinator |> process.send(WorkComplete(results))
@@ -590,22 +614,41 @@ fn handle_compute_worker(
   }
 }
 
-// This function will be called remotely via spawn_link
-pub fn distributed_worker_process(
-  from: Int, 
-  to: Int, 
-  length: Int, 
-  coordinator_pid: process.Pid
-) -> Nil {
-  io.println("Worker processing range " <> int.to_string(from) <> "-" <> int.to_string(to))
+// This function runs on the REMOTE node (spawn_link on that node)
+pub fn distributed_worker_entry(args: #(Int, Int, Int, Subject(CoordinatorMessage))) -> Nil {
+  let #(from, to, length, coordinator) = args
+  let node_name = current_node() |> atom.to_string
+  io.println(
+    "node "
+    <> node_name
+    <> ": starting range "
+    <> int.to_string(from)
+    <> "-"
+    <> int.to_string(to)
+    <> " length "
+    <> int.to_string(length)
+  )
   
   // Process the assigned range
   let result = accumulate_compute(from, to, length, [])
+  let ok_count =
+    result
+    |> list.filter(fn(r) { case r { Ok(_) -> True _ -> False } })
+    |> list.length
   
-  // Send result back to coordinator
-  let _ = send_to_pid(coordinator_pid, WorkComplete(result))
+  // Send result back to coordinator (typed, across nodes)
+  coordinator |> process.send(WorkComplete(result))
   
-  io.println("Worker completed range " <> int.to_string(from) <> "-" <> int.to_string(to))
+  io.println(
+    "node "
+    <> node_name
+    <> ": completed range "
+    <> int.to_string(from)
+    <> "-"
+    <> int.to_string(to)
+    <> ", ok="
+    <> int.to_string(ok_count)
+  )
 }
 
 // ==================== Local Supervision (existing) ====================

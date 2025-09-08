@@ -6,6 +6,9 @@ This project implements a distributed solution using Gleam's actor model to find
 - Shreyansh Nayak
 - Siddhant Chauhan
 
+## Distributed Remote Actors Demo
+https://github.com/user-attachments/assets/ad6969e2-d8b1-4803-9309-5ee15ad12c7a
+
 ## Architecture
 
 The implementation uses a boss-worker actor pattern:

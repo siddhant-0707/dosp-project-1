@@ -2,6 +2,10 @@
 
 This project implements a distributed solution using Gleam's actor model to find perfect squares that are sums of consecutive squares.
 
+## Team Members
+- Shreyansh Nayak
+- Siddhant Chauhan
+
 ## Architecture
 
 The implementation uses a boss-worker actor pattern:

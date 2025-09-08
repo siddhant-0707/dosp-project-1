@@ -308,8 +308,8 @@ pub fn spawn_link_remote(
   args: List(a)
 ) -> process.Pid
 
-@external(erlang, "erlang", "send")
-fn send_to_pid(pid: process.Pid, message: term) -> term
+// @external(erlang, "erlang", "send")
+// fn send_to_pid(pid: process.Pid, message: term) -> term
 
 // Message receiving for distributed coordination  
 pub type CoordinatorMessage {
@@ -524,95 +524,95 @@ fn spawn_distributed_workers_with_actor(
 }
 
 // Spawn a worker that computes locally and sends results to coordinator
-fn spawn_distributed_worker_with_coordinator(
-  node: atom.Atom,
-  from: Int,
-  to: Int,
-  length: Int,
-  coordinator: Subject(CoordinatorMessage),
-) -> process.Pid {
-  // Since we can't easily spawn remote Gleam actors, let's spawn a local actor 
-  // that represents the remote computation and sends results back
-  case create_worker_representative(from, to, length, coordinator) {
-    Ok(worker) -> {
-      // In a real implementation, this would be the remote PID
-      // For now, return the local representative's PID  
-      let _ = #(node, worker)  // Use node to avoid warnings
-      self()  // Placeholder PID
-    }
-    Error(_) -> self()  // Fallback
-  }
-}
+// fn spawn_distributed_worker_with_coordinator(
+//   node: atom.Atom,
+//   from: Int,
+//   to: Int,
+//   length: Int,
+//   coordinator: Subject(CoordinatorMessage),
+// ) -> process.Pid {
+//   // Since we can't easily spawn remote Gleam actors, let's spawn a local actor 
+//   // that represents the remote computation and sends results back
+//   case create_worker_representative(from, to, length, coordinator) {
+//     Ok(worker) -> {
+//       // In a real implementation, this would be the remote PID
+//       // For now, return the local representative's PID  
+//       let _ = #(node, worker)  // Use node to avoid warnings
+//       self()  // Placeholder PID
+//     }
+//     Error(_) -> self()  // Fallback
+//   }
+// }
 
 // Simple computation worker message
-type ComputeMessage {
-  StartCompute
-}
+// type ComputeMessage {
+//   StartCompute
+// }
 
-// Create a local actor that represents remote computation
-fn create_worker_representative(
-  from: Int,
-  to: Int,
-  length: Int,
-  coordinator: Subject(CoordinatorMessage),
-) -> Result(Subject(ComputeMessage), String) {
-  let worker_state = #(from, to, length, coordinator)
+// // Create a local actor that represents remote computation
+// fn create_worker_representative(
+//   from: Int,
+//   to: Int,
+//   length: Int,
+//   coordinator: Subject(CoordinatorMessage),
+// ) -> Result(Subject(ComputeMessage), String) {
+//   let worker_state = #(from, to, length, coordinator)
   
-  actor.new(worker_state)
-  |> actor.on_message(handle_compute_worker)
-  |> actor.start
-  |> result.map(fn(started) {
-    // Immediately start processing when worker is created
-    started.data |> process.send(StartCompute)
-    started.data
-  })
-  |> result.map_error(fn(err) { "Failed to create worker: " <> string.inspect(err) })
-}
+//   actor.new(worker_state)
+//   |> actor.on_message(handle_compute_worker)
+//   |> actor.start
+//   |> result.map(fn(started) {
+//     // Immediately start processing when worker is created
+//     started.data |> process.send(StartCompute)
+//     started.data
+//   })
+//   |> result.map_error(fn(err) { "Failed to create worker: " <> string.inspect(err) })
+// }
 
 // Handle messages for the compute worker
-fn handle_compute_worker(
-  state: #(Int, Int, Int, Subject(CoordinatorMessage)),
-  message: ComputeMessage,
-) -> actor.Next(#(Int, Int, Int, Subject(CoordinatorMessage)), ComputeMessage) {
-  let #(from, to, length, coordinator) = state
+// fn handle_compute_worker(
+//   state: #(Int, Int, Int, Subject(CoordinatorMessage)),
+//   message: ComputeMessage,
+// ) -> actor.Next(#(Int, Int, Int, Subject(CoordinatorMessage)), ComputeMessage) {
+//   let #(from, to, length, coordinator) = state
   
-  case message {
-    StartCompute -> {
-      let node_name = current_node() |> atom.to_string
-      io.println(
-        "node "
-        <> node_name
-        <> ": starting range "
-        <> int.to_string(from)
-        <> "-"
-        <> int.to_string(to)
-        <> " length "
-        <> int.to_string(length)
-      )
-      // Perform the actual computation
-      let results = accumulate_compute(from, to, length, [])
-      let ok_count =
-        results
-        |> list.filter(fn(r) { case r { Ok(_) -> True _ -> False } })
-        |> list.length
-      io.println(
-        "node "
-        <> node_name
-        <> ": completed range "
-        <> int.to_string(from)
-        <> "-"
-        <> int.to_string(to)
-        <> ", ok="
-        <> int.to_string(ok_count)
-      )
+//   case message {
+//     StartCompute -> {
+//       let node_name = current_node() |> atom.to_string
+//       io.println(
+//         "node "
+//         <> node_name
+//         <> ": starting range "
+//         <> int.to_string(from)
+//         <> "-"
+//         <> int.to_string(to)
+//         <> " length "
+//         <> int.to_string(length)
+//       )
+//       // Perform the actual computation
+//       let results = accumulate_compute(from, to, length, [])
+//       let ok_count =
+//         results
+//         |> list.filter(fn(r) { case r { Ok(_) -> True _ -> False } })
+//         |> list.length
+//       io.println(
+//         "node "
+//         <> node_name
+//         <> ": completed range "
+//         <> int.to_string(from)
+//         <> "-"
+//         <> int.to_string(to)
+//         <> ", ok="
+//         <> int.to_string(ok_count)
+//       )
       
-      // Send results to coordinator
-      coordinator |> process.send(WorkComplete(results))
+//       // Send results to coordinator
+//       coordinator |> process.send(WorkComplete(results))
       
-      actor.stop()
-    }
-  }
-}
+//       actor.stop()
+//     }
+//   }
+// }
 
 // This function runs on the REMOTE node (spawn_link on that node)
 pub fn distributed_worker_entry(args: #(Int, Int, Int, Subject(CoordinatorMessage))) -> Nil {

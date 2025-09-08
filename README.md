@@ -3,6 +3,7 @@
 This project implements a distributed solution using Gleam's actor model to find perfect squares that are sums of consecutive squares.
 
 ## Team Members
+Group 89:
 - Shreyansh Nayak
 - Siddhant Chauhan
 
